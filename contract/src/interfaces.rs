@@ -1,5 +1,8 @@
 use std::collections::HashMap;
-
+use near_sdk::serde::{
+    Deserialize,
+    Serialize,
+};
 use near_sdk::{AccountId, json_types::{Base64VecU8, U64}, ext_contract};
 
 #[ext_contract(mintbase_store)]
@@ -10,6 +13,7 @@ pub trait MintbaseStore {
     ) -> Option<TokenCompliant>;
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct TokenCompliant {
     /// The id of this token on this `Store`. Not unique across `Store`s.
     /// `token_id`s count up from 0. Ref: https://github.com/near/NEPs/discussions/171
@@ -46,11 +50,13 @@ pub struct TokenCompliant {
     pub origin_key: Option<TokenKey>,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct Loan {
     pub holder: AccountId,
     pub loan_contract: AccountId,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct ComposeableStats {
     /// How deep this token is in a chain of composeability on THIS contract.
     /// If this token is cross-composed, it's depth will STILL be 0. `depth`
@@ -64,6 +70,7 @@ pub struct ComposeableStats {
     pub cross_contract_children: u8,
 }
 
+#[derive(Deserialize, Serialize)]
 pub enum Owner {
     /// Standard pattern: owned by a user.
     Account(AccountId),
@@ -75,11 +82,13 @@ pub enum Owner {
     Lock(AccountId),
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct TokenKey {
     pub token_id: u64,
     pub account_id: String,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct TokenMetadataCompliant {
     /// the Title for this token. ex. "Arch Nemesis: Mail Carrier" or "Parcel 5055"
     pub title: Option<String>,
@@ -110,6 +119,7 @@ pub struct TokenMetadataCompliant {
     pub reference_hash: Option<Base64VecU8>,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct Royalty {
     /// Mapping of addresses to relative percentages of the overall royalty percentage
     pub split_between: HashMap<near_sdk::AccountId, SafeFraction>,
@@ -117,10 +127,12 @@ pub struct Royalty {
     pub percentage: SafeFraction,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct SplitOwners {
     pub split_between: HashMap<AccountId, SafeFraction>,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct SafeFraction {
     pub numerator: u32,
 }

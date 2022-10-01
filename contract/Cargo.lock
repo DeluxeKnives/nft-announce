@@ -681,6 +681,7 @@ name = "nft_announce"
 version = "1.0.0"
 dependencies = [
  "near-sdk",
+ "serde",
  "uint",
 ]
 

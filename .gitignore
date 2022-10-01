@@ -12,6 +12,7 @@ target
 
 # keys
 /templates/react/neardev
+neardev
 
 # testing
 /coverage
@@ -30,3 +31,6 @@ target
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.parcel-cache
+dist

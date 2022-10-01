@@ -19,7 +19,7 @@ pub struct TokenCompliant {
     /// `token_id`s count up from 0. Ref: https://github.com/near/NEPs/discussions/171
     pub token_id: String,
     /// The current owner of this token. Either an account_id or a token_id (if composed).
-    pub owner_id: Owner,
+    pub owner_id: AccountId,
     /// Ref:
     /// https://github.com/near/NEPs/blob/master/specs/Standards/NonFungibleToken/ApprovalManagement.md
     /// Set of accounts that may transfer this token, other than the owner.
@@ -70,6 +70,7 @@ pub struct ComposeableStats {
     pub cross_contract_children: u8,
 }
 
+/*
 #[derive(Deserialize, Serialize)]
 pub enum Owner {
     /// Standard pattern: owned by a user.
@@ -81,6 +82,7 @@ pub enum Owner {
     /// Lock: temporarily locked until some callback returns.
     Lock(AccountId),
 }
+*/
 
 #[derive(Deserialize, Serialize)]
 pub struct TokenKey {

@@ -1,7 +1,7 @@
-near-blank-project
+nft-announce
 ==================
 
-This app was initialized with [create-near-app]
+A near contract that allows the owner of an NFT to make an announcement on the blockchain. Expects the NFT to be handled via Mintbase.
 
 
 Quick Start
@@ -98,3 +98,32 @@ On Windows, if you're seeing an error containing `EPERM` it may be related to sp
   [NEAR Wallet]: https://wallet.testnet.near.org/
   [near-cli]: https://github.com/near/near-cli
   [gh-pages]: https://github.com/tschaub/gh-pages
+
+
+State Changing Commands
+=======================
+
+Initialization:
+```
+near call dev-1664634630859-58512250857969 new "{\"nft_store_contract\":\"shopifyteststore.mintspace2.testnet\"}" --accountId deluxeshop.testnet
+```
+
+Announce:
+```
+near call dev-1664634630859-58512250857969 announce "{\"nft_id\":\"5\",\"announcement\":\"hello\"}" --accountId deluxeshop.testnet
+```
+
+View Store Contract:
+```
+near view dev-1664634630859-58512250857969 get_nft_store_contract
+```
+
+View Announcement:
+```
+near view dev-1664634630859-58512250857969 get_announcement "{\"nft_id\":\"5\"}"
+```
+
+View NFT Owner:
+```
+near call dev-1664634630859-58512250857969 get_nft_owner "{\"nft_id\":\"5\"}" --accountId deluxeshop.testnet
+```

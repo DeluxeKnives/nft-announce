@@ -1,39 +1,36 @@
-use interfaces::{mintbase_store, TokenCompliant, Owner};
+use interfaces::{mintbase_store, TokenCompliant};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U64;
-use near_sdk::{env, near_bindgen, AccountId, Gas, PromiseError};
+use near_sdk::{env, near_bindgen, AccountId, Gas, PanicOnDefault, Promise, PromiseError};
 mod interfaces;
 
 const TGAS: u64 = 1_000_000_000_000;
 
 // Defines contract data structure
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct NFTAnnounce {
     pub nft_store_contract: AccountId,
     pub announcements: UnorderedMap<U64, String>,
-}
-
-// Don't allow initialization without constructors
-impl Default for NFTAnnounce {
-    fn default() -> Self {
-        env::panic_str("Not initialized yet.");
-    }
 }
 
 // Implement the contract structure
 #[near_bindgen]
 impl NFTAnnounce {
     #[init]
-    #[private]
-    pub fn init(nft_store_contract: AccountId) -> Self {
+    pub fn new(nft_store_contract: AccountId) -> Self {
         assert!(!env::state_exists(), "Already initialized");
         // TODO: no clue what the prefix does for the UnorderedMap
         Self {
             nft_store_contract,
             announcements: UnorderedMap::new(b"d"),
         }
+    }
+
+    // Public method - returns the account ID of the nft store contract
+    pub fn get_nft_store_contract(&self) -> AccountId {
+        self.nft_store_contract.clone()
     }
 
     // Public method - returns an announcement for a specific string
@@ -44,25 +41,37 @@ impl NFTAnnounce {
         };
     }
 
-    // Public method - accepts a greeting, such as "howdy", and records it
-    pub fn announce(&mut self, nft_id: U64, announcement: String) {
+    // Public method - returns an announcement for a specific string
+    pub fn get_nft_owner(&self, nft_id: U64) -> Promise {
+        let nft_data_promise = mintbase_store::ext(self.nft_store_contract.clone())
+            .with_static_gas(Gas(5 * TGAS))
+            .nft_token(nft_id);
+        return nft_data_promise.then(
+            Self::ext(env::current_account_id())
+                .with_static_gas(Gas(5 * TGAS))
+                .query_token_view_callback(),
+        );
+    }
+
+    // Public method - accepts a string if the user owns the specified nft
+    pub fn announce(&mut self, nft_id: U64, announcement: String) -> Promise {
         let nft_data_promise = mintbase_store::ext(self.nft_store_contract.clone())
             .with_static_gas(Gas(5 * TGAS))
             .nft_token(nft_id);
 
         nft_data_promise.then(
-            Self::ext(env::predecessor_account_id())
+            Self::ext(env::current_account_id())
                 .with_static_gas(Gas(5 * TGAS))
                 .query_token_callback(nft_id, announcement),
-        );
+        )
     }
 
-    #[private] // Public - but only callable by env::current_account_id()
+    #[private]
     pub fn query_token_callback(
         &mut self,
         #[callback_result] call_result: Result<TokenCompliant, PromiseError>,
         nft_id: U64,
-        announcement: String
+        announcement: String,
     ) {
         // Check if the promise succeeded
         if call_result.is_err() {
@@ -73,14 +82,27 @@ impl NFTAnnounce {
         let token: TokenCompliant = call_result.unwrap();
 
         // Ensure that nothing happens
-        match token.owner_id {
-            Owner::Account(owner) => {
-                if owner == env::predecessor_account_id() {
-                    self.announcements.insert(&nft_id, &announcement);
-                }
-            },
-            _ => panic!("Only accounts can announce!"),
+        if token.owner_id == env::signer_account_id() {
+            self.announcements.insert(&nft_id, &announcement);
         }
+        else {
+            panic!("Only owners can announce!");
+        }
+    }
+
+    #[private]
+    pub fn query_token_view_callback(
+        self,
+        #[callback_result] call_result: Result<TokenCompliant, PromiseError>,
+    ) -> AccountId {
+        // Check if the promise succeeded
+        if call_result.is_err() {
+            panic!("There was an error contacting the NFT contract!");
+        }
+
+        // Get the token
+        let token: TokenCompliant = call_result.unwrap();
+        token.owner_id
     }
 }
 
@@ -93,7 +115,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_nft_contract() {}
+    fn get_nft_contract() {
+        let alice: AccountId = "alice.near".parse().unwrap();
+        assert!("invalid.".parse::<AccountId>().is_err());
+
+        let announcer = NFTAnnounce {
+            nft_store_contract: alice.clone(),
+            announcements: UnorderedMap::new(b"d"),
+        };
+        let store = announcer.get_nft_store_contract();
+
+        assert_eq!(store, alice);
+    }
 
     #[test]
     fn set_hash_as_owner() {}
